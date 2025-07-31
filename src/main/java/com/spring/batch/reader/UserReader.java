@@ -7,6 +7,7 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -24,6 +25,8 @@ public class UserReader {
 
     @Autowired
     private S3Client s3Client;
+    @Value("${spring.s3.bucket}")
+    private String bucketName;
 
     @Bean
     public MultiResourceItemReader<UserModel> reader() {
@@ -31,14 +34,14 @@ public class UserReader {
 
         // S3 bucket & prefix
         ListObjectsV2Request listReq = ListObjectsV2Request.builder()
-                .bucket("amir-rahi-bucket")
+                .bucket(bucketName)
                 .prefix("user") // read all files starting with 'user'
                 .build();
 
         for (S3Object obj : s3Client.listObjectsV2(listReq).contents()) {
             if (obj.key().endsWith(".csv")) {
                 InputStream stream = s3Client.getObject(GetObjectRequest.builder()
-                        .bucket("amir-rahi-bucket")
+                        .bucket(bucketName)
                         .key(obj.key())
                         .build());
                 resourceList.add(new InputStreamResource(stream));
